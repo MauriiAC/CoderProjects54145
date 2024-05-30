@@ -1,0 +1,31 @@
+{% extends 'padre.html' %}
+
+{% block contenidoQueCambia %}
+  
+<p>Buscamos los cursos con la camada nro: {{camada}}</p>
+
+{% if cursos %}
+
+<ul>
+  {% for curso in cursos %}
+    
+    <li>
+      {{curso.nombre}} - {{curso.camada}}
+    </li>
+      
+  {% endfor %}
+
+</ul>
+
+{% else %}
+
+  <p>No hubo coincidencias!</p>
+
+{% endif %}
+
+
+  
+
+
+{% endblock contenidoQueCambia %}
+  

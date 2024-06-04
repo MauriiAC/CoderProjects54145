@@ -1,0 +1,30 @@
+{% extends 'padre.html' %}
+
+
+{% block contenidoQueCambia %}
+  
+
+<h1>Lista de Profesores</h1>
+
+<ul>
+  
+  {% for profesor in profesores %}
+    <li>
+      {{profesor}}
+    </li>
+    <div style="display: flex; column-gap: 5px;">
+      <form action="{% url 'EliminaProfesor' profesor.id %}" method="post">{% csrf_token %}
+        <button type="submit"> Eliminar </button>
+      </form>
+      <button>
+        <a href="{% url 'EditaProfesor' profesor.id %}"> Actualizar </a>
+      </button>
+    </div>
+  {% endfor %}
+
+</ul>
+
+<a href="{% url 'CreaProfesor' %}">Crear Profesor</a>
+
+{% endblock contenidoQueCambia %}
+  

@@ -1,7 +1,10 @@
 from django.http import HttpResponse
 from django.shortcuts import render
-from .models import Curso
-from .forms import CursoFormulario
+from .models import Curso, Profesor
+from .forms import CursoFormulario, ProfesorFormulario
+from django.views.generic import ListView
+from django.views.generic.detail import DetailView
+from django.views.generic.edit import DeleteView, UpdateView, CreateView
 
 # Create your views here.
 def curso(req, nombre, camada):
@@ -85,3 +88,116 @@ def buscar(req):
   else:
       
       return render(req, "inicio.html", {"message": "No envias el dato de la camada"})
+
+def lista_profesores(req):
+
+  mis_profesores = Profesor.objects.all()
+
+  return render(req, "leer_profesores.html", {"profesores": mis_profesores})
+
+def crea_profesor(req):
+
+  if req.method == 'POST':
+
+    miFormulario = ProfesorFormulario(req.POST)
+
+    if miFormulario.is_valid():
+
+      data = miFormulario.cleaned_data
+
+      nuevo_profesor = Profesor(nombre=data['nombre'], apellido=data['apellido'], email=data['email'], profesion=data['profesion'])
+      nuevo_profesor.save()
+
+      return render(req, "inicio.html", {"message": "Profesor creado con éxito"})
+    
+    else:
+
+      return render(req, "inicio.html", {"message": "Datos inválidos"})
+  
+  else:
+
+    miFormulario = ProfesorFormulario()
+
+    return render(req, "profesor_formulario.html", {"miFormulario": miFormulario})
+  
+def eliminar_profesor(req, id):
+
+  if req.method == 'POST':
+
+    profesor = Profesor.objects.get(id=id)
+    profesor.delete()
+
+    mis_profesores = Profesor.objects.all()
+
+  return render(req, "leer_profesores.html", {"profesores": mis_profesores})
+
+def editar_profesor(req, id):
+
+  if req.method == 'POST':
+
+    miFormulario = ProfesorFormulario(req.POST)
+
+    if miFormulario.is_valid():
+
+      data = miFormulario.cleaned_data
+      profesor = Profesor.objects.get(id=id)
+
+      profesor.nombre = data["nombre"]
+      profesor.apellido = data["apellido"]
+      profesor.email = data["email"]
+      profesor.profesion = data["profesion"]
+
+      profesor.save()
+
+      return render(req, "inicio.html", {"message": "Profesor actualizado con éxito"})
+    
+    else:
+
+      return render(req, "inicio.html", {"message": "Datos inválidos"})
+  
+  else:
+
+    profesor = Profesor.objects.get(id=id)
+
+    miFormulario = ProfesorFormulario(initial={
+      "nombre": profesor.nombre,
+      "apellido": profesor.apellido,
+      "email": profesor.email,
+      "profesion": profesor.profesion,
+    })
+
+    return render(req, "editar_profesor.html", {"miFormulario": miFormulario, "id": profesor.id})
+  
+
+class CursoList(ListView):
+
+  model = Curso
+  template_name = 'curso_list.html'
+  context_object_name = "cursos"
+
+class CursoDetail(DetailView):
+
+  model = Curso
+  template_name = 'curso_detail.html'
+  context_object_name = "curso"
+
+class CursoCreate(CreateView):
+
+  model = Curso
+  template_name = 'curso_create.html'
+  fields = ["nombre", "camada"]
+  success_url = "/app-coder/"
+
+class CursoUpdate(UpdateView):
+
+  model = Curso
+  template_name = 'curso_update.html'
+  fields = ('__all__')
+  success_url = "/app-coder/"
+  context_object_name = "curso"
+
+class CursoDelete(DeleteView):
+
+  model = Curso
+  template_name = 'curso_delete.html'
+  success_url = "/app-coder/"

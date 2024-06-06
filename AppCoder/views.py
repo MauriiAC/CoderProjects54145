@@ -5,6 +5,11 @@ from .forms import CursoFormulario, ProfesorFormulario
 from django.views.generic import ListView
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import DeleteView, UpdateView, CreateView
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.admin.views.decorators import staff_member_required
 
 # Create your views here.
 def curso(req, nombre, camada):
@@ -16,6 +21,7 @@ def curso(req, nombre, camada):
     <p>Curso: {nuevo_curso.nombre} - Camada: {nuevo_curso.camada} creado!</p>
   """)
 
+@staff_member_required(login_url="/app-coder/login")
 def lista_cursos(req):
 
   lista = Curso.objects.all()
@@ -169,7 +175,7 @@ def editar_profesor(req, id):
     return render(req, "editar_profesor.html", {"miFormulario": miFormulario, "id": profesor.id})
   
 
-class CursoList(ListView):
+class CursoList(LoginRequiredMixin, ListView):
 
   model = Curso
   template_name = 'curso_list.html'
@@ -201,3 +207,62 @@ class CursoDelete(DeleteView):
   model = Curso
   template_name = 'curso_delete.html'
   success_url = "/app-coder/"
+  context_object_name = "curso"
+
+def login_view(req):
+
+  if req.method == 'POST':
+
+    miFormulario = AuthenticationForm(req, data=req.POST)
+
+    if miFormulario.is_valid():
+
+      data = miFormulario.cleaned_data
+
+      usuario = data["username"]
+      psw = data["password"]
+
+      user = authenticate(username=usuario, password=psw)
+
+      if user:
+        login(req, user)
+        return render(req, "inicio.html", {"message": f"Bienvenido {usuario}"})
+      
+      else:
+        return render(req, "inicio.html", {"message": "Datos erroneos"})
+    
+    else:
+
+      return render(req, "inicio.html", {"message": "Datos inválidos"})
+  
+  else:
+
+    miFormulario = AuthenticationForm()
+
+    return render(req, "login.html", {"miFormulario": miFormulario})
+  
+
+def register(req):
+
+  if req.method == 'POST':
+
+    miFormulario = UserCreationForm(req.POST)
+
+    if miFormulario.is_valid():
+
+      data = miFormulario.cleaned_data
+
+      usuario = data["username"]
+      miFormulario.save()
+      
+      return render(req, "inicio.html", {"message": f"Usuario {usuario} creado con éxito!"})
+    
+    else:
+
+      return render(req, "inicio.html", {"message": "Datos inválidos"})
+  
+  else:
+
+    miFormulario = UserCreationForm()
+
+    return render(req, "registro.html", {"miFormulario": miFormulario})  

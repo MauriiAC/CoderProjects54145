@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Curso, Profesor, Estudiante, Entregable
+from .models import *
 
 class CursoAdmin(admin.ModelAdmin):
   list_display = ['nombre', 'camada']
@@ -11,4 +11,5 @@ admin.site.register(Curso, CursoAdmin)
 admin.site.register(Profesor)
 admin.site.register(Estudiante)
 admin.site.register(Entregable)
+admin.site.register(Avatar)
 

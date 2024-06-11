@@ -1,12 +1,12 @@
 from django.http import HttpResponse
 from django.shortcuts import render
-from .models import Curso, Profesor
-from .forms import CursoFormulario, ProfesorFormulario
+from .models import Curso, Profesor, Avatar
+from .forms import CursoFormulario, ProfesorFormulario, UserEditForm, AvatarFormulario
 from django.views.generic import ListView
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import DeleteView, UpdateView, CreateView
 from django.contrib.auth import authenticate, login, logout
-from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
+from django.contrib.auth.forms import AuthenticationForm, UserCreationForm, UserChangeForm
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.admin.views.decorators import staff_member_required
@@ -30,7 +30,12 @@ def lista_cursos(req):
 
 def inicio(req):
 
-  return render(req, "inicio.html", {})
+  try:
+    avatar = Avatar.objects.get(user=req.user.id)
+    return render(req, "inicio.html", {"url": avatar.imagen.url})
+  except:
+    return render(req, "inicio.html")
+
 
 def cursos(req):
 
@@ -61,7 +66,7 @@ def curso_formulario(req):
 
       data = miFormulario.cleaned_data
 
-      nuevo_curso = Curso(nombre=data['curso'], camada=data['camada'])
+      nuevo_curso = Curso(nombre=data['nombre'], camada=data['camada'])
       nuevo_curso.save()
 
       return render(req, "inicio.html", {"message": "Curso creado con éxito"})
@@ -265,4 +270,63 @@ def register(req):
 
     miFormulario = UserCreationForm()
 
-    return render(req, "registro.html", {"miFormulario": miFormulario})  
+    return render(req, "registro.html", {"miFormulario": miFormulario})
+  
+@login_required()
+def editar_perfil(req):
+
+  usuario = req.user
+
+  if req.method == 'POST':
+
+    miFormulario = UserEditForm(req.POST, instance=req.user)
+
+    if miFormulario.is_valid():
+
+      data = miFormulario.cleaned_data
+
+      usuario.first_name = data["first_name"]
+      usuario.last_name = data["last_name"]
+      usuario.email = data["email"]
+      usuario.set_password(data["password1"])
+
+      usuario.save()
+
+      return render(req, "inicio.html", {"message": "Datos actualizado con éxito"})
+    
+    else:
+
+      return render(req, "editar_perfil.html", {"miFormulario": miFormulario})
+  
+  else:
+
+    miFormulario = UserEditForm(instance=req.user)
+
+    return render(req, "editar_perfil.html", {"miFormulario": miFormulario})
+  
+
+def agregar_avatar(req):
+
+  if req.method == 'POST':
+
+    miFormulario = AvatarFormulario(req.POST, req.FILES)
+
+    if miFormulario.is_valid():
+
+      data = miFormulario.cleaned_data
+
+      avatar = Avatar(user=req.user, imagen=data["imagen"])
+      avatar.save()
+
+      return render(req, "inicio.html", {"message": "Avatar cargado con éxito"})
+    
+    else:
+
+      return render(req, "inicio.html", {"message": "Datos inválidos"})
+  
+  else:
+
+    miFormulario = AvatarFormulario()
+
+    return render(req, "agregar_avatar.html", {"miFormulario": miFormulario})
+    

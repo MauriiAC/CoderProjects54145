@@ -32,6 +32,7 @@ class Profesor(models.Model):
   apellido = models.CharField(max_length=30)
   email = models.EmailField()
   profesion = models.CharField(max_length=30)
+  user_id = models.OneToOneField(User, on_delete=models.CASCADE)
   cursos = models.ManyToManyField(Curso)
 
   def __str__(self):

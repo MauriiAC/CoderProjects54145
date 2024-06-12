@@ -1,11 +1,37 @@
 {% extends 'padre.html' %}
 
-
 {% block contenidoQueCambia %}
-  
+
+{% load static %}
+
 <h1>Vista de cursos</h1>
 
 <p>Esta es la lista de cursos disponibles</p>
+
+<section class="lista-cursos">
+
+  {% for curso in lista_cursos %}
+
+  <div class="card" style="width: 18rem;">
+    <img src="https://s3.us-east-1.amazonaws.com/creator-assets.codedamn.com/jethwa23-63975036119238000886a7fd/COURSE_IMAGE/2022-12-12/3e734dc240901332f3501e8632bb8594752113c9" class="card-img-top" alt="...">
+    <div class="card-body">
+      <h5 class="card-title">{{curso.nombre}} - {{curso.camada}}</h5>
+      <p class="card-text">Detalle del cursión en cuestión.</p>
+      <a href="#" class="btn btn-primary">Ver detalle</a>
+    </div>
+  </div>
+
+  {% endfor %}
+    
+</section>
+
+<nav aria-label="Page navigation example">
+  <ul class="pagination">
+    <li class="page-item"><a class="page-link" href="#">Previous</a></li>
+    <li class="page-item"><a class="page-link" href="{% url 'Cursos' current_page %}?direction=next">Next</a></li>
+  </ul>
+</nav>
+
 
 {% endblock contenidoQueCambia %}
   

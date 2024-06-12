@@ -1,3 +1,5 @@
+from typing import Any
+from django.db.models.query import QuerySet
 from django.http import HttpResponse
 from django.shortcuts import render
 from .models import Curso, Profesor, Avatar
@@ -10,6 +12,8 @@ from django.contrib.auth.forms import AuthenticationForm, UserCreationForm, User
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.admin.views.decorators import staff_member_required
+from django.contrib.auth.models import User
+from django.http import HttpResponseRedirect
 
 # Create your views here.
 def curso(req, nombre, camada):
@@ -37,9 +41,20 @@ def inicio(req):
     return render(req, "inicio.html")
 
 
-def cursos(req):
+def cursos(req, start=0):
 
-  return render(req, "cursos.html", {})
+  cant_por_pagina = 3
+
+  if req.GET.get('direction') == 'next':
+    start += 1
+  elif req.GET.get('direction') == 'previous':
+    start -= 1
+
+  inicio = int(start)*cant_por_pagina
+  final = (int(start)+1)*cant_por_pagina
+  lista = Curso.objects.all()[inicio:final]
+
+  return render(req, "cursos.html", {"lista_cursos": lista, "current_page": start})
 
 def profesores(req):
 
@@ -102,21 +117,53 @@ def buscar(req):
 
 def lista_profesores(req):
 
-  mis_profesores = Profesor.objects.all()
+  try:
 
-  return render(req, "leer_profesores.html", {"profesores": mis_profesores})
+    if req.user.profesor:
+
+      mis_profesores = Profesor.objects.all()
+
+      return render(req, "leer_profesores.html", {"profesores": mis_profesores})
+    
+    else:
+
+      return HttpResponseRedirect('/app-coder/')
+
+  except:
+
+      return HttpResponseRedirect('/app-coder/')
+
 
 def crea_profesor(req):
 
   if req.method == 'POST':
 
-    miFormulario = ProfesorFormulario(req.POST)
+    info = req.POST
 
-    if miFormulario.is_valid():
+    miFormulario = ProfesorFormulario({
+      "nombre": info["nombre"],
+      "apellido": info["apellido"],
+      "email": info["email"],
+      "profesion": info["profesion"],
+    })
+
+    userForm = UserCreationForm({
+      "username": info["username"],
+      "password1": info["password1"],
+      "password2": info["password2"],
+    })
+
+    if miFormulario.is_valid() and userForm.is_valid():
 
       data = miFormulario.cleaned_data
 
-      nuevo_profesor = Profesor(nombre=data['nombre'], apellido=data['apellido'], email=data['email'], profesion=data['profesion'])
+      data.update(userForm.cleaned_data)
+
+      user = User(username=data["username"])
+      user.set_password(data["password1"])
+      user.save()
+
+      nuevo_profesor = Profesor(nombre=data['nombre'], apellido=data['apellido'], email=data['email'], profesion=data['profesion'], user_id=user)
       nuevo_profesor.save()
 
       return render(req, "inicio.html", {"message": "Profesor creado con éxito"})
@@ -128,8 +175,10 @@ def crea_profesor(req):
   else:
 
     miFormulario = ProfesorFormulario()
+    userForm = UserCreationForm()
+    
 
-    return render(req, "profesor_formulario.html", {"miFormulario": miFormulario})
+    return render(req, "profesor_formulario.html", {"miFormulario": miFormulario, "userForm": userForm})
   
 def eliminar_profesor(req, id):
 
@@ -185,6 +234,12 @@ class CursoList(LoginRequiredMixin, ListView):
   model = Curso
   template_name = 'curso_list.html'
   context_object_name = "cursos"
+
+  def get_queryset(self):
+    profesor_email = self.kwargs.get("profesor_email")
+    profesor = Profesor.objects.get(email=profesor_email)
+    
+    return profesor.cursos.all()
 
 class CursoDetail(DetailView):
 
